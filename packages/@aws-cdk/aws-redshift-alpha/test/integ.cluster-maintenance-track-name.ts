@@ -14,9 +14,10 @@ class RedshiftStack extends Stack {
       vpc: vpc,
       masterUser: {
         masterUsername: 'admin',
-        excludeCharacters: '"@/\\\ \'`',
+        excludeCharacters: '"@/\\ \'`',
       },
       defaultDatabaseName: 'database',
+      nodeType: redshift.NodeType.RA3_XLPLUS,
       maintenanceTrackName: redshift.MaintenanceTrackName.TRAILING,
       removalPolicy: RemovalPolicy.DESTROY,
     });
@@ -24,7 +25,7 @@ class RedshiftStack extends Stack {
     new redshift.User(this, 'User', {
       cluster,
       databaseName: 'database',
-      excludeCharacters: '"@/\\\ \'`',
+      excludeCharacters: '"@/\\ \'`',
     });
   }
 }
@@ -33,20 +34,12 @@ const app = new App({
   postCliContext: {
     '@aws-cdk/aws-lambda:useCdkManagedLogGroup': false,
   },
-  context: {
-    'availability-zones:account=123456789012:region=us-east-1': ['us-east-1a', 'us-east-1b', 'us-east-1c'],
-  },
 });
 
-const stack = new Stack(app, 'aws-cdk-redshift-cluster-database', {
-  env: {
-    account: '123456789012',
-    region: 'us-east-1',
-  },
-});
+const stack = new Stack(app, 'aws-cdk-redshift-cluster-database');
 
 new RedshiftStack(stack, 'RedshiftMaintenanceTrackNameIntegStack');
 
-new integ.IntegTest(stack, 'RedshiftMaintenanceTrackNameInteg', {
-  testCases: [],
+new integ.IntegTest(app, 'RedshiftMaintenanceTrackNameInteg', {
+  testCases: [stack],
 });
