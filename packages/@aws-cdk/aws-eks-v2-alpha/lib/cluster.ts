@@ -6,7 +6,7 @@ import { CfnCluster } from 'aws-cdk-lib/aws-eks';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import { Annotations, CfnOutput, CfnResource, IResource, Resource, Tags, Token, Duration, ArnComponents, Stack, UnscopedValidationError, FeatureFlags } from 'aws-cdk-lib/core';
+import { Annotations, CfnOutput, CfnResource, IResource, Resource, Tags, Token, Duration, ArnComponents, Stack, UnscopedValidationError, FeatureFlags, ValidationError } from 'aws-cdk-lib/core';
 import { memoizedGetter } from 'aws-cdk-lib/core/lib/helpers-internal';
 import { MethodMetadata, addConstructMetadata } from 'aws-cdk-lib/core/lib/metadata-resource';
 import { propertyInjectable } from 'aws-cdk-lib/core/lib/prop-injectable';
@@ -598,7 +598,7 @@ export interface ClusterProps extends ClusterCommonOptions {
    *
    * Changing this value after the cluster has been created will result in the cluster being replaced.
    *
-   * @default true
+   * @default true if the mode is not EKS Auto Mode
    */
   readonly bootstrapSelfManagedAddons?: boolean;
 
@@ -1133,6 +1133,10 @@ export class Cluster extends ClusterBase {
     const autoModeEnabled = this.isValidAutoModeConfig(props);
 
     if (autoModeEnabled) {
+      if (props.bootstrapSelfManagedAddons === true) {
+        throw new ValidationError('bootstrapSelfManagedAddons cannot be true when using EKS Auto Mode', this);
+      }
+
       // attach required managed policy for the cluster role in EKS Auto Mode
       // see - https://docs.aws.amazon.com/eks/latest/userguide/auto-cluster-iam-role.html
       ['AmazonEKSComputePolicy',
